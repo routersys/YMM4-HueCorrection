@@ -19,30 +19,50 @@ SamplerState InputSampler : register(s0);
 
 float3 RGBToHSL(float3 color)
 {
-    float3 hsl;
-    float fmin = min(min(color.r, color.g), color.b);
-    float fmax = max(max(color.r, color.g), color.b);
-    float delta = fmax - fmin;
+    float r = color.r;
+    float g = color.g;
+    float b = color.b;
 
-    hsl.z = (fmax + fmin) / 2.0;
-    if (delta == 0.0)
+    float max_val = max(max(r, g), b);
+    float min_val = min(min(r, g), b);
+
+    float h = 0.0;
+    float s = 0.0;
+    float l = (max_val + min_val) / 2.0;
+
+    if (max_val == min_val)
     {
-        hsl.x = 0.0;
-        hsl.y = 0.0;
+        h = s = 0.0;
     }
     else
     {
-        hsl.y = hsl.z < 0.5 ? delta / (fmax + fmin) : delta / (2.0 - fmax - fmin);
-        float deltaR = (((fmax - color.r) / 6.0) + (delta / 2.0)) / delta;
-        float deltaG = (((fmax - color.g) / 6.0) + (delta / 2.0)) / delta;
-        float deltaB = (((fmax - color.b) / 6.0) + (delta / 2.0)) / delta;
+        float d = max_val - min_val;
+        
+        float divisor = (l > 0.5) ? (2.0 - max_val - min_val) : (max_val + min_val);
+        if (divisor > 0.0)
+        {
+            s = d / divisor;
+        }
+        else
+        {
+            s = 0.0;
+        }
 
-        hsl.x = color.r == fmax ? deltaB - deltaG :
-                color.g == fmax ? (1.0 / 3.0) + deltaR - deltaB :
-                (2.0 / 3.0) + deltaG - deltaR;
-        hsl.x = frac(hsl.x + 1.0);
+        if (max_val == r)
+        {
+            h = (g - b) / d + (g < b ? 6.0 : 0.0);
+        }
+        else if (max_val == g)
+        {
+            h = (b - r) / d + 2.0;
+        }
+        else
+        {
+            h = (r - g) / d + 4.0;
+        }
+        h /= 6.0;
     }
-    return hsl;
+    return float3(h, s, l);
 }
 
 float HueToRGB(float f1, float f2, float hue)
@@ -65,7 +85,8 @@ float3 HSLToRGB(float3 hsl)
     }
     else
     {
-        float f2 = hsl.z < 0.5 ? hsl.z * (1.0 + hsl.y) : (hsl.z + hsl.y) - (hsl.y * hsl.z);
+        float f2 = hsl.z < 0.5 ?
+            hsl.z * (1.0 + hsl.y) : (hsl.z + hsl.y) - (hsl.y * hsl.z);
         float f1 = 2.0 * hsl.z - f2;
         return float3(
             HueToRGB(f1, f2, hsl.x + (1.0 / 3.0)),
@@ -92,7 +113,6 @@ float4 main(float4 pos : SV_POSITION, float4 posScene : SCENE_POSITION, float4 u
     float3 originalRgb = color.rgb / color.a;
     float3 hsl = RGBToHSL(originalRgb);
     float inputHueDeg = hsl.x * 360.0;
-    
     float hueShift = 0.0;
     float saturation = 1.0;
     float luminance = 1.0;
@@ -126,10 +146,8 @@ float4 main(float4 pos : SV_POSITION, float4 posScene : SCENE_POSITION, float4 u
         float currentHue = inputHueDeg;
         if (currentHue < h1)
             currentHue += 360;
-
         float totalDist = h2 - h1;
         float t = (totalDist > 0.001) ? saturate((currentHue - h1) / totalDist) : 0.0;
-        
         hueShift = lerp(points[p1_idx].hueShift, points[p2_idx].hueShift, t);
         saturation = lerp(points[p1_idx].saturation, points[p2_idx].saturation, t);
         luminance = lerp(points[p1_idx].luminance, points[p2_idx].luminance, t);
@@ -142,6 +160,5 @@ float4 main(float4 pos : SV_POSITION, float4 posScene : SCENE_POSITION, float4 u
     
     float3 finalRgb = HSLToRGB(modifiedHsl);
     finalRgb = lerp(originalRgb, finalRgb, factor);
-
     return float4(saturate(finalRgb) * color.a, color.a);
 }
