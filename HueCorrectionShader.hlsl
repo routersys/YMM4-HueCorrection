@@ -5,7 +5,6 @@ struct Point
     float saturation;
     float luminance;
 };
-
 cbuffer Constants : register(b0)
 {
     int numPoints;
@@ -29,7 +28,6 @@ float3 RGBToHSL(float3 color)
     float h = 0.0;
     float s = 0.0;
     float l = (max_val + min_val) / 2.0;
-
     if (max_val == min_val)
     {
         h = s = 0.0;
@@ -37,7 +35,6 @@ float3 RGBToHSL(float3 color)
     else
     {
         float d = max_val - min_val;
-        
         float divisor = (l > 0.5) ? (2.0 - max_val - min_val) : (max_val + min_val);
         if (divisor > 0.0)
         {
@@ -86,7 +83,7 @@ float3 HSLToRGB(float3 hsl)
     else
     {
         float f2 = hsl.z < 0.5 ?
-            hsl.z * (1.0 + hsl.y) : (hsl.z + hsl.y) - (hsl.y * hsl.z);
+        hsl.z * (1.0 + hsl.y) : (hsl.z + hsl.y) - (hsl.y * hsl.z);
         float f1 = 2.0 * hsl.z - f2;
         return float3(
             HueToRGB(f1, f2, hsl.x + (1.0 / 3.0)),
@@ -116,7 +113,6 @@ float4 main(float4 pos : SV_POSITION, float4 posScene : SCENE_POSITION, float4 u
     float hueShift = 0.0;
     float saturation = 1.0;
     float luminance = 1.0;
-
     if (numPoints == 1)
     {
         hueShift = points[0].hueShift;

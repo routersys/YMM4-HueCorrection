@@ -32,7 +32,7 @@
                 <DataTrigger Value="True">
                     <DataTrigger.Binding>
                         <MultiBinding Converter="{StaticResource IsSelectedConverter}">
-                            <Binding />
+                            <Binding Path="OriginalPoint" />
                             <Binding Path="DataContext.SelectedPoint" RelativeSource="{RelativeSource AncestorType=local:HueCorrectionEditor}"/>
                         </MultiBinding>
                     </DataTrigger.Binding>
@@ -101,7 +101,7 @@
                     <Canvas.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="ポイントを追加" Command="{Binding AddPointCommand}"/>
-                            <MenuItem Header="選択中のポイントを削除" Command="{Binding DeleteSelectedPointCommand}" IsEnabled="{Binding IsPointSelected}"/>
+                            <MenuItem Header="選択中のポイントを削除" Command="{Binding DeleteSelectedPointCommand}"/>
                         </ContextMenu>
                     </Canvas.ContextMenu>
 
@@ -158,7 +158,19 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Thumb DragStarted="Thumb_DragStarted" DragDelta="Thumb_DragDelta" 
-                                       DragCompleted="Thumb_DragCompleted" Style="{StaticResource ControlPointThumb}"/>
+                                       DragCompleted="Thumb_DragCompleted" Style="{StaticResource ControlPointThumb}">
+                                    <Thumb.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock>
+                                                <Run Text="X: "/>
+                                                <Run Text="{Binding X, StringFormat={}{0:F2}}"/>
+                                                <LineBreak/>
+                                                <Run Text="Y: "/>
+                                                <Run Text="{Binding Y, StringFormat={}{0:F2}}"/>
+                                            </TextBlock>
+                                        </ToolTip>
+                                    </Thumb.ToolTip>
+                                </Thumb>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

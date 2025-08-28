@@ -11,7 +11,7 @@ using IntegratedColorChange.Controls;
 
 namespace IntegratedColorChange
 {
-    [VideoEffect("色相補正", ["調整"], ["Hue Correction"])]
+    [VideoEffect("色相補正", ["拡張"], ["Hue Correction"], IsAviUtlSupported = false)]
     public class HueCorrectionEffect : VideoEffectBase
     {
         public override string Label => "色相補正";

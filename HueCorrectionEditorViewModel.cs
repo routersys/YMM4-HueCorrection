@@ -36,7 +36,18 @@ namespace IntegratedColorChange
         public ImmutableList<HueControlPoint> Points { get; private set; } = ImmutableList<HueControlPoint>.Empty;
         public ObservableCollection<DisplayPointViewModel> DisplayPoints { get; } = new();
 
-        public HueControlPoint? SelectedPoint { get => selectedPoint; set { if (Set(ref selectedPoint, value)) OnPropertyChanged(nameof(IsPointSelected)); } }
+        public HueControlPoint? SelectedPoint
+        {
+            get => selectedPoint;
+            set
+            {
+                if (Set(ref selectedPoint, value))
+                {
+                    OnPropertyChanged(nameof(IsPointSelected));
+                    (DeleteSelectedPointCommand as ActionCommand)?.RaiseCanExecuteChanged();
+                }
+            }
+        }
         private HueControlPoint? selectedPoint;
 
         public bool IsPointSelected => SelectedPoint != null;
@@ -84,9 +95,9 @@ namespace IntegratedColorChange
             item.PropertyChanged += Item_PropertyChanged;
             _dispatcher = Application.Current.Dispatcher;
 
-            SetLuminanceModeCommand = new ActionCommand(_ => true, _ => { CurrentMode = EditMode.Luminance; UpdateAnimatedState(); });
-            SetSaturationModeCommand = new ActionCommand(_ => true, _ => { CurrentMode = EditMode.Saturation; UpdateAnimatedState(); });
-            SetHueModeCommand = new ActionCommand(_ => true, _ => { CurrentMode = EditMode.Hue; UpdateAnimatedState(); });
+            SetLuminanceModeCommand = new ActionCommand(_ => true, _ => { CurrentMode = EditMode.Luminance; });
+            SetSaturationModeCommand = new ActionCommand(_ => true, _ => { CurrentMode = EditMode.Saturation; });
+            SetHueModeCommand = new ActionCommand(_ => true, _ => { CurrentMode = EditMode.Hue; });
 
             AddPointCommand = new ActionCommand(_ => true, _ => AddPointAt());
             DeleteSelectedPointCommand = new ActionCommand(_ => IsPointSelected && Points.Count > 1, _ => DeleteSelectedPoint());
@@ -114,6 +125,7 @@ namespace IntegratedColorChange
             OnPropertyChanged(nameof(IsLuminanceMode));
             OnPropertyChanged(nameof(IsSaturationMode));
             OnPropertyChanged(nameof(IsHueMode));
+            UpdateAnimatedState();
         }
 
         private double NormalizeAngle(double angle)
@@ -243,11 +255,50 @@ namespace IntegratedColorChange
         {
             if (CanvasWidth <= 0 || CanvasHeight <= 0) return;
 
-            var converter = new AngleToPointConverter();
-            var currentX = (double)converter.Convert(new object[] { CurrentMode, point.Angle.Values[0].Value, point.Luminance.Values[0].Value, point.Saturation.Values[0].Value, point.Hue.Values[0].Value, CanvasWidth, CanvasHeight, "X" }, typeof(double), string.Empty, System.Globalization.CultureInfo.CurrentCulture);
-            var newX = Math.Clamp(currentX + dx, 0, CanvasWidth);
-            point.Angle.Values[0].Value = (newX / CanvasWidth) * 360.0;
+            var frame = (int)(TimeSliderPosition * 100);
+            const int length = 100;
+            const int fps = 60;
 
+            var sortedPoints = Points
+                .OrderBy(p => NormalizeAngle(p.Angle.GetValue(frame, length, fps)))
+                .ToList();
+            var currentIndex = sortedPoints.IndexOf(point);
+
+            double minAngle = 0;
+            double maxAngle = 360;
+
+            if (currentIndex > 0)
+            {
+                minAngle = NormalizeAngle(sortedPoints[currentIndex - 1].Angle.GetValue(frame, length, fps));
+            }
+            if (currentIndex < sortedPoints.Count - 1)
+            {
+                maxAngle = NormalizeAngle(sortedPoints[currentIndex + 1].Angle.GetValue(frame, length, fps));
+            }
+
+            var currentAngle = NormalizeAngle(point.Angle.GetValue(frame, length, fps));
+            var currentX = (currentAngle / 360.0) * CanvasWidth;
+            var newX = Math.Clamp(currentX + dx, 0, CanvasWidth);
+            var newAngle = (newX / CanvasWidth) * 360.0;
+
+            if (maxAngle < minAngle)
+            {
+                if (newAngle > maxAngle && newAngle < minAngle)
+                {
+                    if (Math.Abs(newAngle - maxAngle) < Math.Abs(newAngle - minAngle))
+                        newAngle = maxAngle;
+                    else
+                        newAngle = minAngle;
+                }
+            }
+            else
+            {
+                newAngle = Math.Clamp(newAngle, minAngle, maxAngle);
+            }
+
+            point.Angle.Values[0].Value = newAngle;
+
+            var converter = new AngleToPointConverter();
             var currentY = (double)converter.Convert(new object[] { CurrentMode, point.Angle.Values[0].Value, point.Luminance.Values[0].Value, point.Saturation.Values[0].Value, point.Hue.Values[0].Value, CanvasWidth, CanvasHeight, "Y" }, typeof(double), string.Empty, System.Globalization.CultureInfo.CurrentCulture);
             var newY = Math.Clamp(currentY + dy, 0, CanvasHeight);
 
@@ -264,6 +315,7 @@ namespace IntegratedColorChange
             CopyToOtherItems();
             UpdateAnimatedState();
         }
+
 
         public void UpdateAnimatedState()
         {
@@ -310,21 +362,26 @@ namespace IntegratedColorChange
 
             var extendedPoints = new List<HueControlPoint>();
 
-            var firstPoint = new HueControlPoint(sortedPoints.First());
-            var lastPoint = new HueControlPoint(sortedPoints.Last());
+            var firstPointAngle = NormalizeAngle(sortedPoints.First().Angle.GetValue(frame, length, fps));
+            var lastPointAngle = NormalizeAngle(sortedPoints.Last().Angle.GetValue(frame, length, fps));
+            var angleDiff = NormalizeAngle(firstPointAngle - lastPointAngle);
 
-            var ghostBefore = new HueControlPoint(firstPoint);
-            ghostBefore.Angle.CopyFrom(firstPoint.Angle);
-            ghostBefore.Angle.AddToEachValues(-360);
-            extendedPoints.Add(ghostBefore);
+            if (angleDiff > 0)
+            {
+                var ghostBefore = new HueControlPoint(sortedPoints.Last())
+                {
+                    Angle = { Values = { new AnimationValue(sortedPoints.Last().Angle.GetValue(frame, length, fps) - 360) } }
+                };
+                extendedPoints.Add(ghostBefore);
+            }
 
             extendedPoints.AddRange(sortedPoints);
 
-            var ghostAfter = new HueControlPoint(lastPoint);
-            ghostAfter.Angle.CopyFrom(lastPoint.Angle);
-            ghostAfter.Angle.AddToEachValues(360);
+            var ghostAfter = new HueControlPoint(sortedPoints.First())
+            {
+                Angle = { Values = { new AnimationValue(sortedPoints.First().Angle.GetValue(frame, length, fps) + 360) } }
+            };
             extendedPoints.Add(ghostAfter);
-
 
             var converter = new AngleToPointConverter();
             var segments = new PathSegmentCollection();
@@ -353,6 +410,7 @@ namespace IntegratedColorChange
             var figure = new PathFigure(startPoint, segments, false);
             PathData = new PathGeometry(new[] { figure });
         }
+
 
         private void OnBeginEdit() => BeginEdit?.Invoke(this, EventArgs.Empty);
         private void OnEndEdit() => EndEdit?.Invoke(this, EventArgs.Empty);

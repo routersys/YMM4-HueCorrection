@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Windows;
 using Vortice.Direct2D1;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Player.Video;
@@ -36,7 +37,7 @@ namespace IntegratedColorChange
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to create HueCorrectionCustomEffect: {ex.Message}");
+                MessageBox.Show($"色相補正カスタムエフェクトの作成に失敗しました。\n{ex.Message}", "エフェクトエラー", MessageBoxButton.OK, MessageBoxImage.Error);
                 effect = null;
             }
         }
@@ -50,7 +51,7 @@ namespace IntegratedColorChange
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error setting input: {ex.Message}");
+                MessageBox.Show($"エフェクト入力の設定中にエラーが発生しました。\n{ex.Message}", "エフェクトエラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -62,7 +63,7 @@ namespace IntegratedColorChange
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error clearing input: {ex.Message}");
+                MessageBox.Show($"エフェクト入力のクリア中にエラーが発生しました。\n{ex.Message}", "エフェクトエラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -91,7 +92,6 @@ namespace IntegratedColorChange
             {
                 return effectDescription.DrawDescription;
             }
-
 
             try
             {
@@ -133,7 +133,7 @@ namespace IntegratedColorChange
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error updating HueCorrectionEffect: {ex.Message}");
+                MessageBox.Show($"色相補正エフェクトの更新中にエラーが発生しました。\n{ex.Message}", "エフェクトエラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             return effectDescription.DrawDescription;
@@ -149,7 +149,7 @@ namespace IntegratedColorChange
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error disposing HueCorrectionEffectProcessor: {ex.Message}");
+                MessageBox.Show($"色相補正エフェクトの破棄中にエラーが発生しました。\n{ex.Message}", "エフェクトエラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

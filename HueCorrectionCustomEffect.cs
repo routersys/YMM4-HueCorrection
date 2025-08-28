@@ -2,6 +2,7 @@
 using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Windows;
 using Vortice.Direct2D1;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Player.Video;
@@ -61,6 +62,7 @@ namespace IntegratedColorChange
                 using var stream = assembly.GetManifestResourceStream("IntegratedColorChange.Shaders.HueCorrectionShader.cso");
                 if (stream is null)
                 {
+                    MessageBox.Show("シェーダーリソース 'IntegratedColorChange.Shaders.HueCorrectionShader.cso' が見つかりません。", "シェーダーエラー", MessageBoxButton.OK, MessageBoxImage.Error);
                     throw new FileNotFoundException("Shader resource not found.");
                 }
                 using var ms = new MemoryStream();

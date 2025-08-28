@@ -18,7 +18,7 @@ namespace IntegratedColorChange.Controls
         private static readonly HttpClient _httpClient = new();
         private static string _settingsFilePath = "";
         private static string _ignoredVersion = "";
-        private const string CurrentVersion = "0.0.1";
+        private const string CurrentVersion = "0.0.5";
 
         public event EventHandler? BeginEdit;
         public event EventHandler? EndEdit;
@@ -45,7 +45,10 @@ namespace IntegratedColorChange.Controls
                         LoadSettings();
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"設定ファイルのパス取得中にエラーが発生しました。\n{ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
@@ -96,8 +99,17 @@ namespace IntegratedColorChange.Controls
                     }
                 }
             }
-            catch (Exception)
+            catch (HttpRequestException ex)
             {
+                MessageBox.Show($"更新の確認中にネットワークエラーが発生しました。\n{ex.Message}", "更新確認エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            catch (JsonException ex)
+            {
+                MessageBox.Show($"更新情報の解析中にエラーが発生しました。\n{ex.Message}", "更新確認エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"予期せぬエラーが発生しました。\n{ex.Message}", "更新確認エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -119,8 +131,9 @@ namespace IntegratedColorChange.Controls
                 }
                 return false;
             }
-            catch
+            catch (FormatException ex)
             {
+                MessageBox.Show($"バージョン番号の形式が無効です。\n{ex.Message}", "バージョン比較エラー", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
         }
@@ -142,7 +155,10 @@ namespace IntegratedColorChange.Controls
                     _ignoredVersion = settings.IgnoredVersion;
                 }
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"設定ファイルの読み込みに失敗しました。\n{ex.Message}", "設定エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private static void SaveSettings()
@@ -153,7 +169,10 @@ namespace IntegratedColorChange.Controls
                 var json = JsonSerializer.Serialize(settings);
                 File.WriteAllText(_settingsFilePath, json);
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"設定ファイルの保存に失敗しました。\n{ex.Message}", "設定エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
