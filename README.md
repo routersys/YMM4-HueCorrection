@@ -6,6 +6,8 @@
 
 YMM4（YukkuriMovieMaker v4）で、特定の色をターゲットにした高度な色調補正を実現するエフェクトプラグインです。
 
+![image](https://github.com/routersys/YMM4-HueCorrection/blob/main/HueCorrection.png)
+
 ---
 
 ### 概要
