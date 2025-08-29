@@ -24,6 +24,17 @@ namespace IntegratedColorChange
             public DisplayPointViewModel(HueControlPoint originalPoint) { OriginalPoint = originalPoint; }
         }
 
+        public class IgnoredColorViewModel : Bindable
+        {
+            public Color Color { get => _color; set => Set(ref _color, value); }
+            private Color _color;
+
+            public IgnoredColorViewModel(Color color)
+            {
+                _color = color;
+            }
+        }
+
         public enum EditMode { Luminance, Saturation, Hue }
 
         private readonly ItemProperty[] itemProperties;
@@ -31,7 +42,6 @@ namespace IntegratedColorChange
         private readonly HueCorrectionEffect owner;
         private Point lastClickPosition;
         private readonly System.Windows.Threading.Dispatcher _dispatcher;
-
 
         public ImmutableList<HueControlPoint> Points { get; private set; } = ImmutableList<HueControlPoint>.Empty;
         public ObservableCollection<DisplayPointViewModel> DisplayPoints { get; } = new();
@@ -77,12 +87,28 @@ namespace IntegratedColorChange
         public ObservableCollection<double> VerticalGridLines { get; } = [];
         public ObservableCollection<double> HorizontalGridLines { get; } = [];
 
+        public ObservableCollection<IgnoredColorViewModel> IgnoredColors { get; } = new();
+        public IgnoredColorViewModel? SelectedIgnoredColor
+        {
+            get => _selectedIgnoredColor;
+            set
+            {
+                if (Set(ref _selectedIgnoredColor, value))
+                {
+                    (RemoveIgnoredColorCommand as ActionCommand)?.RaiseCanExecuteChanged();
+                }
+            }
+        }
+        private IgnoredColorViewModel? _selectedIgnoredColor;
+
         public ICommand SetLuminanceModeCommand { get; }
         public ICommand SetSaturationModeCommand { get; }
         public ICommand SetHueModeCommand { get; }
         public ICommand AddPointCommand { get; }
         public ICommand DeleteSelectedPointCommand { get; }
         public ICommand SizeChangedCommand { get; }
+        public ICommand AddIgnoredColorCommand { get; }
+        public ICommand RemoveIgnoredColorCommand { get; }
 
         public event EventHandler? BeginEdit;
         public event EventHandler? EndEdit;
@@ -112,12 +138,40 @@ namespace IntegratedColorChange
                 }
             });
 
+            AddIgnoredColorCommand = new ActionCommand(
+                _ => true,
+                _ =>
+                {
+                    OnBeginEdit();
+                    IgnoredColors.Add(new IgnoredColorViewModel(Colors.White));
+                    SaveChanges();
+                    OnEndEdit();
+                });
+
+            RemoveIgnoredColorCommand = new ActionCommand(
+                _ => SelectedIgnoredColor != null,
+                _ =>
+                {
+                    if (SelectedIgnoredColor == null) return;
+                    OnBeginEdit();
+                    IgnoredColors.Remove(SelectedIgnoredColor);
+                    SaveChanges();
+                    OnEndEdit();
+                });
+
             UpdatePointsFromSource();
+            UpdateIgnoredColorsFromSource();
             if (SelectedPoint is null && Points.Count > 0)
             {
                 SelectedPoint = Points[0];
             }
             PopulateGridLines();
+        }
+
+        public void SaveChanges()
+        {
+            var newColors = IgnoredColors.Select(vm => vm.Color).ToImmutableList();
+            SetIgnoredColorsValue(newColors);
         }
 
         private void OnModeChanged()
@@ -197,6 +251,9 @@ namespace IntegratedColorChange
                 case nameof(owner.Points):
                     UpdatePointsFromSource();
                     break;
+                case nameof(owner.IgnoredColors):
+                    UpdateIgnoredColorsFromSource();
+                    break;
                 case nameof(owner.CurrentProgress):
                     if (ShowTimeline)
                     {
@@ -229,6 +286,36 @@ namespace IntegratedColorChange
             }
             (DeleteSelectedPointCommand as ActionCommand)?.RaiseCanExecuteChanged();
             UpdateAnimatedState();
+        }
+
+        private void UpdateIgnoredColorsFromSource()
+        {
+            if (itemProperties.Length == 0) return;
+            var ownerEffect = (HueCorrectionEffect)itemProperties[0].PropertyOwner;
+            var sourceColors = ownerEffect.IgnoredColors;
+
+            if (sourceColors is null) return;
+
+            var currentColors = IgnoredColors.Select(vm => vm.Color);
+            if (currentColors.SequenceEqual(sourceColors)) return;
+
+            IgnoredColors.Clear();
+            foreach (var color in sourceColors)
+            {
+                IgnoredColors.Add(new IgnoredColorViewModel(color));
+            }
+            (RemoveIgnoredColorCommand as ActionCommand)?.RaiseCanExecuteChanged();
+        }
+
+        private void SetIgnoredColorsValue(ImmutableList<Color> newColors)
+        {
+            foreach (var prop in itemProperties)
+            {
+                if (prop.PropertyOwner is HueCorrectionEffect effect)
+                {
+                    effect.IgnoredColors = newColors;
+                }
+            }
         }
 
         private void SetValue(ImmutableList<HueControlPoint> newPoints)
@@ -412,8 +499,8 @@ namespace IntegratedColorChange
         }
 
 
-        private void OnBeginEdit() => BeginEdit?.Invoke(this, EventArgs.Empty);
-        private void OnEndEdit() => EndEdit?.Invoke(this, EventArgs.Empty);
+        public void OnBeginEdit() => BeginEdit?.Invoke(this, EventArgs.Empty);
+        public void OnEndEdit() => EndEdit?.Invoke(this, EventArgs.Empty);
 
         public void Dispose()
         {

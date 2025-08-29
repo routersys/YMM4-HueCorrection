@@ -6,6 +6,7 @@ using System.Windows;
 using Vortice.Direct2D1;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Player.Video;
+using System.Windows.Media;
 
 namespace IntegratedColorChange
 {
@@ -13,6 +14,16 @@ namespace IntegratedColorChange
     {
         public int NumPoints { set => SetValue((int)EffectImpl.Properties.NumPoints, Math.Clamp(value, 0, 16)); }
         public float Factor { set => SetValue((int)EffectImpl.Properties.Factor, value); }
+        public float ColorTolerance { set => SetValue((int)EffectImpl.Properties.ColorTolerance, value); }
+
+        public void SetIgnoredColor(int index, Color color)
+        {
+            if (index < 0 || index >= 16) return;
+            var vector = new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
+            SetValue((int)EffectImpl.Properties.IgnoredColor0 + index, vector);
+        }
+
+        public int NumIgnoredColors { set => SetValue((int)EffectImpl.Properties.NumIgnoredColors, Math.Clamp(value, 0, 16)); }
 
         public void SetShaderPoint(int index, float inputHue, float hueShift, float saturation, float luminance)
         {
@@ -38,7 +49,12 @@ namespace IntegratedColorChange
         {
             public int NumPoints;
             public float Factor;
-            public Vector2 Padding;
+            public float ColorTolerance;
+            public int NumIgnoredColors;
+            public Vector4 IgnoredColor0; public Vector4 IgnoredColor1; public Vector4 IgnoredColor2; public Vector4 IgnoredColor3;
+            public Vector4 IgnoredColor4; public Vector4 IgnoredColor5; public Vector4 IgnoredColor6; public Vector4 IgnoredColor7;
+            public Vector4 IgnoredColor8; public Vector4 IgnoredColor9; public Vector4 IgnoredColor10; public Vector4 IgnoredColor11;
+            public Vector4 IgnoredColor12; public Vector4 IgnoredColor13; public Vector4 IgnoredColor14; public Vector4 IgnoredColor15;
             public ShaderPoint Point0; public ShaderPoint Point1; public ShaderPoint Point2; public ShaderPoint Point3;
             public ShaderPoint Point4; public ShaderPoint Point5; public ShaderPoint Point6; public ShaderPoint Point7;
             public ShaderPoint Point8; public ShaderPoint Point9; public ShaderPoint Point10; public ShaderPoint Point11;
@@ -74,7 +90,11 @@ namespace IntegratedColorChange
 
             public enum Properties
             {
-                NumPoints, Factor,
+                NumPoints, Factor, ColorTolerance, NumIgnoredColors,
+                IgnoredColor0, IgnoredColor1, IgnoredColor2, IgnoredColor3,
+                IgnoredColor4, IgnoredColor5, IgnoredColor6, IgnoredColor7,
+                IgnoredColor8, IgnoredColor9, IgnoredColor10, IgnoredColor11,
+                IgnoredColor12, IgnoredColor13, IgnoredColor14, IgnoredColor15,
                 Point0, Point1, Point2, Point3, Point4, Point5, Point6, Point7,
                 Point8, Point9, Point10, Point11, Point12, Point13, Point14, Point15
             }
@@ -83,6 +103,44 @@ namespace IntegratedColorChange
             public int NumPoints { get => constants.NumPoints; set { constants.NumPoints = value; UpdateConstants(); } }
             [CustomEffectProperty(PropertyType.Float, (int)Properties.Factor)]
             public float Factor { get => constants.Factor; set { constants.Factor = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Float, (int)Properties.ColorTolerance)]
+            public float ColorTolerance { get => constants.ColorTolerance; set { constants.ColorTolerance = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Int32, (int)Properties.NumIgnoredColors)]
+            public int NumIgnoredColors { get => constants.NumIgnoredColors; set { constants.NumIgnoredColors = value; UpdateConstants(); } }
+
+
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor0)]
+            public Vector4 IgnoredColor0 { get => constants.IgnoredColor0; set { constants.IgnoredColor0 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor1)]
+            public Vector4 IgnoredColor1 { get => constants.IgnoredColor1; set { constants.IgnoredColor1 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor2)]
+            public Vector4 IgnoredColor2 { get => constants.IgnoredColor2; set { constants.IgnoredColor2 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor3)]
+            public Vector4 IgnoredColor3 { get => constants.IgnoredColor3; set { constants.IgnoredColor3 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor4)]
+            public Vector4 IgnoredColor4 { get => constants.IgnoredColor4; set { constants.IgnoredColor4 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor5)]
+            public Vector4 IgnoredColor5 { get => constants.IgnoredColor5; set { constants.IgnoredColor5 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor6)]
+            public Vector4 IgnoredColor6 { get => constants.IgnoredColor6; set { constants.IgnoredColor6 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor7)]
+            public Vector4 IgnoredColor7 { get => constants.IgnoredColor7; set { constants.IgnoredColor7 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor8)]
+            public Vector4 IgnoredColor8 { get => constants.IgnoredColor8; set { constants.IgnoredColor8 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor9)]
+            public Vector4 IgnoredColor9 { get => constants.IgnoredColor9; set { constants.IgnoredColor9 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor10)]
+            public Vector4 IgnoredColor10 { get => constants.IgnoredColor10; set { constants.IgnoredColor10 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor11)]
+            public Vector4 IgnoredColor11 { get => constants.IgnoredColor11; set { constants.IgnoredColor11 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor12)]
+            public Vector4 IgnoredColor12 { get => constants.IgnoredColor12; set { constants.IgnoredColor12 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor13)]
+            public Vector4 IgnoredColor13 { get => constants.IgnoredColor13; set { constants.IgnoredColor13 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor14)]
+            public Vector4 IgnoredColor14 { get => constants.IgnoredColor14; set { constants.IgnoredColor14 = value; UpdateConstants(); } }
+            [CustomEffectProperty(PropertyType.Vector4, (int)Properties.IgnoredColor15)]
+            public Vector4 IgnoredColor15 { get => constants.IgnoredColor15; set { constants.IgnoredColor15 = value; UpdateConstants(); } }
 
             [CustomEffectProperty(PropertyType.Vector4, (int)Properties.Point0)]
             public Vector4 Point0 { get => new Vector4(constants.Point0.InputHue, constants.Point0.HueShift, constants.Point0.Saturation, constants.Point0.Luminance); set { constants.Point0 = new ShaderPoint(value.X, value.Y, value.Z, value.W); UpdateConstants(); } }

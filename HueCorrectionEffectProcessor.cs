@@ -100,36 +100,53 @@ namespace IntegratedColorChange
                 if (activePoints.Count == 0)
                 {
                     effect.NumPoints = 0;
-                    return effectDescription.DrawDescription;
+                }
+                else
+                {
+                    var evaluatedPoints = activePoints.Select(point => new
+                    {
+                        Angle = NormalizeAngle(point.Angle.GetValue(frame, length, fps)),
+                        Hue = point.Hue.GetValue(frame, length, fps),
+                        Saturation = Math.Max(0.0, point.Saturation.GetValue(frame, length, fps)),
+                        Luminance = Math.Max(0.0, point.Luminance.GetValue(frame, length, fps))
+                    }).OrderBy(p => p.Angle).ToList();
+
+                    effect.NumPoints = Math.Min(evaluatedPoints.Count, 16);
+
+                    for (int i = 0; i < 16; i++)
+                    {
+                        if (i < evaluatedPoints.Count)
+                        {
+                            var point = evaluatedPoints[i];
+                            effect.SetShaderPoint(i,
+                                (float)point.Angle,
+                                (float)point.Hue,
+                                (float)point.Saturation,
+                                (float)point.Luminance);
+                        }
+                        else
+                        {
+                            effect.SetShaderPoint(i, 0, 0, 1, 1);
+                        }
+                    }
                 }
 
-                var evaluatedPoints = activePoints.Select(point => new
-                {
-                    Angle = NormalizeAngle(point.Angle.GetValue(frame, length, fps)),
-                    Hue = point.Hue.GetValue(frame, length, fps),
-                    Saturation = Math.Max(0.0, point.Saturation.GetValue(frame, length, fps)),
-                    Luminance = Math.Max(0.0, point.Luminance.GetValue(frame, length, fps))
-                }).OrderBy(p => p.Angle).ToList();
+                effect.Factor = (float)item.Factor.GetValue(frame, length, fps);
+                effect.ColorTolerance = (float)item.ColorTolerance.GetValue(frame, length, fps);
 
-                effect.NumPoints = Math.Min(evaluatedPoints.Count, 16);
-
+                var ignoredColors = item.IgnoredColors;
+                effect.NumIgnoredColors = Math.Min(ignoredColors.Count, 16);
                 for (int i = 0; i < 16; i++)
                 {
-                    if (i < evaluatedPoints.Count)
+                    if (i < ignoredColors.Count)
                     {
-                        var point = evaluatedPoints[i];
-                        effect.SetShaderPoint(i,
-                            (float)point.Angle,
-                            (float)point.Hue,
-                            (float)point.Saturation,
-                            (float)point.Luminance);
+                        effect.SetIgnoredColor(i, ignoredColors[i]);
                     }
                     else
                     {
-                        effect.SetShaderPoint(i, 0, 0, 1, 1);
+                        effect.SetIgnoredColor(i, System.Windows.Media.Colors.Transparent);
                     }
                 }
-                effect.Factor = (float)item.Factor.GetValue(frame, length, fps);
             }
             catch (Exception ex)
             {

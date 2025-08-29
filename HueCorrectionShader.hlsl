@@ -9,7 +9,9 @@ cbuffer Constants : register(b0)
 {
     int numPoints;
     float factor;
-    float2 padding;
+    float colorTolerance;
+    int numIgnoredColors;
+    float4 ignoredColors[16];
     Point points[16];
 };
 
@@ -102,12 +104,28 @@ float hueDifference(float h1, float h2)
 float4 main(float4 pos : SV_POSITION, float4 posScene : SCENE_POSITION, float4 uv0 : TEXCOORD0) : SV_Target
 {
     float4 color = InputTexture.Sample(InputSampler, uv0.xy);
-    if (color.a < 0.001 || numPoints < 1)
+    if (color.a < 0.001)
     {
         return color;
     }
 
     float3 originalRgb = color.rgb / color.a;
+    
+    for (int j = 0; j < numIgnoredColors; j++)
+    {
+        float3 ignoredRgb = ignoredColors[j].rgb;
+        float distance = length(originalRgb - ignoredRgb);
+        if (distance < colorTolerance)
+        {
+            return color;
+        }
+    }
+
+    if (numPoints < 1)
+    {
+        return color;
+    }
+
     float3 hsl = RGBToHSL(originalRgb);
     float inputHueDeg = hsl.x * 360.0;
     float hueShift = 0.0;

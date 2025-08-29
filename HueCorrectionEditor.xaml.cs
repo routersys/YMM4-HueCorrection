@@ -171,6 +171,23 @@ namespace IntegratedColorChange
             }
             EndEdit?.Invoke(this, e);
         }
+
+        private void ColorPicker_BeginEdit(object? sender, EventArgs e)
+        {
+            if (DataContext is HueCorrectionEditorViewModel vm)
+            {
+                vm.OnBeginEdit();
+            }
+        }
+
+        private void ColorPicker_EndEdit(object? sender, EventArgs e)
+        {
+            if (DataContext is HueCorrectionEditorViewModel vm)
+            {
+                vm.SaveChanges();
+                vm.OnEndEdit();
+            }
+        }
     }
 
     public class BooleanToVisibilityConverter : IValueConverter
@@ -183,6 +200,19 @@ namespace IntegratedColorChange
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             return (value is Visibility.Visible);
+        }
+    }
+
+    public class IsNotNullToBooleanConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value != null;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 }

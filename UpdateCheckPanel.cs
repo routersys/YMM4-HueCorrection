@@ -18,7 +18,7 @@ namespace IntegratedColorChange.Controls
         private static readonly HttpClient _httpClient = new();
         private static string _settingsFilePath = "";
         private static string _ignoredVersion = "";
-        private const string CurrentVersion = "0.0.5";
+        private const string CurrentVersion = "0.0.6";
 
         public event EventHandler? BeginEdit;
         public event EventHandler? EndEdit;

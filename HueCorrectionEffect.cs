@@ -8,6 +8,7 @@ using YukkuriMovieMaker.Exo;
 using YukkuriMovieMaker.Controls;
 using System.Text.Json.Serialization;
 using IntegratedColorChange.Controls;
+using System.Windows.Media;
 
 namespace IntegratedColorChange
 {
@@ -32,6 +33,15 @@ namespace IntegratedColorChange
         [AnimationSlider("F2", "", 0, 1)]
         public Animation Factor { get; } = new(1, 0, 1);
 
+        [Display(Name = "無視する色", GroupName = "絶対色")]
+        public ImmutableList<Color> IgnoredColors { get => ignoredColors; set => Set(ref ignoredColors, value); }
+        private ImmutableList<Color> ignoredColors = ImmutableList<Color>.Empty;
+
+        [Display(Name = "色の範囲", GroupName = "絶対色")]
+        [AnimationSlider("F2", "", 0, 1)]
+        public Animation ColorTolerance { get; } = new(0.1, 0, 1);
+
+
         [JsonIgnore]
         public double CurrentProgress { get => _currentProgress; set => Set(ref _currentProgress, value); }
         private double _currentProgress = 0.0;
@@ -48,6 +58,6 @@ namespace IntegratedColorChange
             return new HueCorrectionEffectProcessor(devices, this);
         }
 
-        protected override IEnumerable<IAnimatable> GetAnimatables() => [.. Points, Factor];
+        protected override IEnumerable<IAnimatable> GetAnimatables() => [.. Points, Factor, ColorTolerance];
     }
 }
